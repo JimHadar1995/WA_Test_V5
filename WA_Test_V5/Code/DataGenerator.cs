@@ -54,12 +54,7 @@ namespace WA_Test_V5.Code
         {
             if (_initData == null)
                 throw new NullReferenceException(nameof(_initData));
-            //var set = new HashSet<Node>();
             int indexer = 1;
-            //for (int i = 0; i < _initData.Count; i++)
-            //{
-            //    InnerTransform(set, null, _initData[i], 0, ref indexer);
-            //}
             var rootNode = new TreeNode
             {
                 Name = "Портфель проектов",
@@ -173,26 +168,6 @@ namespace WA_Test_V5.Code
             {
                 var hashCode = -1919740922;
                 hashCode = hashCode * -1521134295 + Parent_ID.GetHashCode();
-                hashCode = hashCode * -1521134295 + EqualityComparer<string>.Default.GetHashCode(UniqueName);
-                return hashCode;
-            }
-        }
-
-        class Node : TreeViewElements
-        {
-            public string UniqueName { get; set; }
-            public override bool Equals(object obj)
-            {
-                var node = obj as Node;
-                if (node == null)
-                    return false;
-                return UniqueName == node.UniqueName;
-            }
-
-            public override int GetHashCode()
-            {
-                var hashCode = -1919740922;
-                //hashCode = hashCode * -1521134295 + Parent_ID.GetHashCode();
                 hashCode = hashCode * -1521134295 + EqualityComparer<string>.Default.GetHashCode(UniqueName);
                 return hashCode;
             }
