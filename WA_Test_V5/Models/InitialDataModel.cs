@@ -7,6 +7,7 @@ namespace WA_Test_V5.Models
     public sealed class InitialDataModel
     {
         public List<string> CellsData { get; } = new List<string>();
+        public string Uniq => string.Join(".", CellsData);
         ///// <summary>
         ///// Поле "Программа"
         ///// </summary>

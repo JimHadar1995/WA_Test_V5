@@ -3,7 +3,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Web;
 using WA_Test_V5.Interface.TreeView;
 using WA_Test_V5.Models;
 
@@ -48,6 +47,7 @@ namespace WA_Test_V5.Code
             {
                 _initData.Add(GetInitialRowData(cells, rowI));
             }
+            _initData.Sort((x, y) => Comparer<string>.Default.Compare(x.Uniq, y.Uniq));
         }
 
         private List<TreeViewElements> TransformToTree()
@@ -64,7 +64,8 @@ namespace WA_Test_V5.Code
             {
                 Name = "Портфель проектов",
                 ID = "0",
-                CID = -2
+                CID = -2,
+                Parent = null
             };
             //рекурсивное формирование дерева
             for (int i = 0; i < _initData.Count; i++)
@@ -73,27 +74,41 @@ namespace WA_Test_V5.Code
             }
 
             //преобразование дерева в плоский массив
-            var expandTree = new List<TreeViewElements>(_initData.Count * 10);
+            var expandTree = new List<TreeNode>(_initData.Count * 10);
 
             ExpandTree(expandTree, rootNode);
             expandTree.RemoveAt(0);
-            return expandTree;
+            return expandTree.Cast<TreeViewElements>().ToList();
         }
 
         private void InnerTransformTree(TreeNode parent, InitialDataModel initRow, int numCol, ref int indexer)
         {
+            TreeNode node;
             //случай, когда строка повторяется
             if (numCol == initRow.CellsData.Count - 1)
+            {
+                node = new TreeNode
+                {
+                    Name = initRow.CellsData[numCol - 1],
+                    ID = indexer.ToString(),
+                    CID = int.Parse(initRow.CellsData[numCol]),
+                    Parent_ID = parent.Parent_ID,
+                    Parent = parent.Parent,
+                    UniqueName = string.Join(".", initRow.CellsData.GetRange(0, initRow.CellsData.Count - 1))
+                };
+                parent.Parent.Childs.Add(node);
                 return;
-
-            var node = new TreeNode
+            }
+            node = new TreeNode
             {
                 Name = initRow.CellsData[numCol],
                 ID = indexer.ToString(),
                 CID = -2,
-                Parent_ID = parent.ID
+                Parent_ID = parent.ID,
+                Parent = parent,
+                UniqueName = string.Join(".", initRow.CellsData.GetRange(0, numCol + 1))
             };
-            
+
             numCol++;
             if (parent.Childs.TryGetValue(node, out var actualNode))
             {
@@ -114,15 +129,17 @@ namespace WA_Test_V5.Code
             }
         }
 
-        private void ExpandTree(List<TreeViewElements> result, TreeNode node)
+        private void ExpandTree(List<TreeNode> result, TreeNode node)
         {
             result.Add(node);
             if (node.Childs.Any())
             {
                 foreach (var child in node.Childs)
                 {
-                    ExpandTree(result, child);
+                    ExpandTree(result, child);                    
                 }
+                node.Childs.Clear();
+                node.Parent = null;
             }
         }
 
@@ -139,7 +156,8 @@ namespace WA_Test_V5.Code
 
         class TreeNode : TreeViewElements
         {
-
+            public string UniqueName { get; set; }
+            public TreeNode Parent { get; set; }
             public HashSet<TreeNode> Childs { get; set; }
                 = new HashSet<TreeNode>();
 
@@ -148,14 +166,14 @@ namespace WA_Test_V5.Code
                 var node = obj as TreeNode;
                 if (node == null)
                     return false;
-                return Name == node.Name;
+                return UniqueName == node.UniqueName;
             }
 
             public override int GetHashCode()
             {
                 var hashCode = -1919740922;
-                //hashCode = hashCode * -1521134295 + Id.GetHashCode();
-                hashCode = hashCode * -1521134295 + EqualityComparer<string>.Default.GetHashCode(Name);
+                hashCode = hashCode * -1521134295 + Parent_ID.GetHashCode();
+                hashCode = hashCode * -1521134295 + EqualityComparer<string>.Default.GetHashCode(UniqueName);
                 return hashCode;
             }
         }
@@ -174,7 +192,7 @@ namespace WA_Test_V5.Code
             public override int GetHashCode()
             {
                 var hashCode = -1919740922;
-                //hashCode = hashCode * -1521134295 + Id.GetHashCode();
+                //hashCode = hashCode * -1521134295 + Parent_ID.GetHashCode();
                 hashCode = hashCode * -1521134295 + EqualityComparer<string>.Default.GetHashCode(UniqueName);
                 return hashCode;
             }
