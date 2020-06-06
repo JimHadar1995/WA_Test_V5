@@ -124,6 +124,7 @@
   <ItemGroup>
     <Compile Include="App_Start\RouteConfig.cs" />
     <Compile Include="Code\DataGenerator.cs" />
+    <Compile Include="Code\InitialDataModelEqualityComparer.cs" />
     <Compile Include="Controllers\HomeController.cs" />
     <Compile Include="Controllers\jsTree3Controller.cs" />
     <Compile Include="Global.asax.cs">

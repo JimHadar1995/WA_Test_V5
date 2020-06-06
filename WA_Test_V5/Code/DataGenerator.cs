@@ -47,7 +47,10 @@ namespace WA_Test_V5.Code
             {
                 _initData.Add(GetInitialRowData(cells, rowI));
             }
-            _initData.Sort((x, y) => Comparer<string>.Default.Compare(x.Uniq, y.Uniq));
+            //Убираем дублирующиеся строки
+            _initData = _initData.Distinct(new InitialDataModelEqualityComparer()).ToList();
+            //Сортируем, исползуя сравнение строк по умолчанию
+            _initData.Sort((x, y) => Comparer<string>.Default.Compare(x.Uniq, y.Uniq));            
         }
 
         private List<TreeViewElements> TransformToTree()
@@ -59,7 +62,7 @@ namespace WA_Test_V5.Code
             {
                 Name = "Портфель проектов",
                 ID = "0",
-                CID = -2,
+                CID = 0,
                 Parent = null
             };
             //рекурсивное формирование дерева
@@ -69,7 +72,7 @@ namespace WA_Test_V5.Code
             }
 
             //преобразование дерева в плоский массив
-            var expandTree = new List<TreeNode>(_initData.Count * 10);
+            var expandTree = new List<TreeNode>(indexer);
 
             ExpandTree(expandTree, rootNode);
             expandTree.RemoveAt(0);
@@ -79,7 +82,7 @@ namespace WA_Test_V5.Code
         private void InnerTransformTree(TreeNode parent, InitialDataModel initRow, int numCol, ref int indexer)
         {
             TreeNode node;
-            //случай, когда строка повторяется
+            //случай, когда строка повторяется, но не совпадает CID
             if (numCol == initRow.CellsData.Count - 1)
             {
                 node = new TreeNode
@@ -89,8 +92,10 @@ namespace WA_Test_V5.Code
                     CID = int.Parse(initRow.CellsData[numCol]),
                     Parent_ID = parent.Parent_ID,
                     Parent = parent.Parent,
-                    UniqueName = string.Join(".", initRow.CellsData.GetRange(0, initRow.CellsData.Count - 1))
+                    UniqueName = string.Join(".", initRow.CellsData.GetRange(0, initRow.CellsData.Count)),
+                    Old_Cid = initRow.CellsData.Last()
                 };
+                indexer++;
                 parent.Parent.Childs.Add(node);
                 return;
             }
@@ -101,7 +106,8 @@ namespace WA_Test_V5.Code
                 CID = -2,
                 Parent_ID = parent.ID,
                 Parent = parent,
-                UniqueName = string.Join(".", initRow.CellsData.GetRange(0, numCol + 1))
+                UniqueName = string.Join(".", initRow.CellsData.GetRange(0, numCol + 1)),
+                Old_Cid = initRow.CellsData.Last()
             };
 
             numCol++;
@@ -115,7 +121,7 @@ namespace WA_Test_V5.Code
 
             if (numCol < initRow.CellsData.Count - 1)
             {
-                InnerTransformTree(node, initRow, numCol, ref indexer);
+                InnerTransformTree(node, initRow, numCol, ref indexer);                
             }
             else
             {
@@ -131,7 +137,7 @@ namespace WA_Test_V5.Code
             {
                 foreach (var child in node.Childs)
                 {
-                    ExpandTree(result, child);                    
+                    ExpandTree(result, child);
                 }
                 node.Childs.Clear();
                 node.Parent = null;
@@ -152,6 +158,7 @@ namespace WA_Test_V5.Code
         class TreeNode : TreeViewElements
         {
             public string UniqueName { get; set; }
+            public string Old_Cid { get; set; }
             public TreeNode Parent { get; set; }
             public HashSet<TreeNode> Childs { get; set; }
                 = new HashSet<TreeNode>();
@@ -167,7 +174,6 @@ namespace WA_Test_V5.Code
             public override int GetHashCode()
             {
                 var hashCode = -1919740922;
-                hashCode = hashCode * -1521134295 + Parent_ID.GetHashCode();
                 hashCode = hashCode * -1521134295 + EqualityComparer<string>.Default.GetHashCode(UniqueName);
                 return hashCode;
             }
